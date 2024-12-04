@@ -1,2 +1,7 @@
 # advent2024golang
-Advent of code 2024 using golang
+
+https://adventofcode.com/2024/
+
+## Convert assignments to markdown
+https://www.convertsimple.com/convert-html-to-markdown/
+
