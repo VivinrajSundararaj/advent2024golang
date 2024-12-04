@@ -10,5 +10,6 @@ import (
 func main() {
 	fmt.Println("--- DAY 01 ---")
 	day1Input01, day1Input02 := utils.ReadFile("day01/input.txt")
-	fmt.Println("Result Part 1:", day01.SolvePart1(day1Input01, day1Input02))
+	part1, part2 := day01.Solve(day1Input01, day1Input02)
+	fmt.Printf("Result - Part 1: %d, Part 2: %d ", part1, part2)
 }
