@@ -32,7 +32,7 @@ func Solve(lines []string) (int, int) {
 	}
 
 	totalPart2 := SolvePart2(lines)
-	// Return the total for Part 1
+
 	return totalPart1, totalPart2
 
 }

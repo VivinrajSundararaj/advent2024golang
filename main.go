@@ -7,6 +7,8 @@ import (
 	"github.com/VivinrajSundararaj/advent2024golang/day01"
 	"github.com/VivinrajSundararaj/advent2024golang/day02"
 	"github.com/VivinrajSundararaj/advent2024golang/day03"
+	"github.com/VivinrajSundararaj/advent2024golang/day04"
+	"github.com/VivinrajSundararaj/advent2024golang/day06"
 	"github.com/VivinrajSundararaj/advent2024golang/utils"
 )
 
@@ -17,7 +19,6 @@ func main() {
 	}
 
 	day := os.Args[1]
-	fmt.Printf("\n--- DAY %s ---\n", day)
 
 	lines, err := utils.ReadLines("day" + day + "/input.txt")
 	if err != nil {
@@ -30,6 +31,8 @@ func main() {
 		"01": day01.Solve,
 		"02": day02.Solve,
 		"03": day03.Solve,
+		"04": day04.Solve,
+		"06": day06.Solve,
 	}
 
 	// Lookup the appropriate Solve function based on the day
