@@ -1,7 +1,6 @@
 package day15
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -47,8 +46,9 @@ func parseInput(lines []string) ([][]rune, string, Point) {
 	return warehouse, moveSequence.String(), robotPosition
 }
 
-// moveRobot processes the robot's moves and updates the warehouse grid
-func moveRobot(warehouse *[][]rune, robotPosition Point, moves string) {
+// moveRobot processes the robot's moves and updates the warehouse grid.
+func moveRobot(warehouse *[][]rune, robotPosition *Point, moves string) {
+	// Direction mappings
 	directions := map[rune]Point{
 		'^': {0, -1}, // Up
 		'v': {0, 1},  // Down
@@ -58,51 +58,118 @@ func moveRobot(warehouse *[][]rune, robotPosition Point, moves string) {
 
 	for _, move := range moves {
 		dir := directions[move]
-		newRobotPosition := add(robotPosition, dir)
+		newRobotPosition := add(*robotPosition, dir)
 
+		// Check if the robot can move to the new position
 		if canMove(warehouse, newRobotPosition) {
-			// Move the robot and possibly push a box
-			if (*warehouse)[newRobotPosition.Y][newRobotPosition.X] == Box {
-				// Check if the robot can push the box
-				boxNewPosition := add(newRobotPosition, dir)
-				if canMoveBox(warehouse, boxNewPosition) {
-					// Move the box
-					(*warehouse)[boxNewPosition.Y][boxNewPosition.X] = Box
-					// Move the robot
-					(*warehouse)[newRobotPosition.Y][newRobotPosition.X] = Robot
-					(*warehouse)[robotPosition.Y][robotPosition.X] = Empty
-					robotPosition = newRobotPosition
-				}
-			} else {
-				// Move only the robot
+			// If the space is empty, just move the robot
+			if (*warehouse)[newRobotPosition.Y][newRobotPosition.X] == Empty {
 				(*warehouse)[newRobotPosition.Y][newRobotPosition.X] = Robot
-				(*warehouse)[robotPosition.Y][robotPosition.X] = Empty
-				robotPosition = newRobotPosition
+				(*warehouse)[(*robotPosition).Y][(*robotPosition).X] = Empty
+				*robotPosition = newRobotPosition
+			} else if (*warehouse)[newRobotPosition.Y][newRobotPosition.X] == Box {
+				// If the robot moves into a box, check if it can push the box or a chain of boxes
+				if canMoveSingleBox(warehouse, newRobotPosition, dir) {
+					// Move the single box one step forward
+					boxPos := newRobotPosition
+					nextPos := add(boxPos, dir)
+					(*warehouse)[nextPos.Y][nextPos.X] = Box
+					(*warehouse)[boxPos.Y][boxPos.X] = Empty
+
+					// The robot moves to the position where the box was
+					(*warehouse)[boxPos.Y][boxPos.X] = Robot
+					(*warehouse)[(*robotPosition).Y][(*robotPosition).X] = Empty
+					*robotPosition = newRobotPosition
+				} else if canMoveMultipleBoxes(warehouse, newRobotPosition, dir) {
+					// Move multiple consecutive boxes forward
+					boxesToMove := []Point{newRobotPosition}
+					currentPos := newRobotPosition
+					// Collect all the consecutive boxes
+					for {
+						currentPos = add(currentPos, dir)
+						if currentPos.Y < 0 || currentPos.Y >= len(*warehouse) || currentPos.X < 0 || currentPos.X >= len((*warehouse)[0]) {
+							break
+						}
+						if (*warehouse)[currentPos.Y][currentPos.X] != Box {
+							break
+						}
+						boxesToMove = append(boxesToMove, currentPos)
+					}
+
+					// Move the boxes in the chain one step forward
+					for i := len(boxesToMove) - 1; i >= 0; i-- {
+						boxPos := boxesToMove[i]
+						// Move the box one step in the direction
+						nextPos := add(boxPos, dir)
+						(*warehouse)[nextPos.Y][nextPos.X] = Box
+						(*warehouse)[boxPos.Y][boxPos.X] = Empty
+					}
+
+					// After moving all boxes, the robot moves to the position of the first box
+					(*warehouse)[newRobotPosition.Y][newRobotPosition.X] = Robot
+					(*warehouse)[(*robotPosition).Y][(*robotPosition).X] = Empty
+					*robotPosition = newRobotPosition
+				}
 			}
 		}
 	}
 }
 
-// add adds two points together
-func add(a, b Point) Point {
-	return Point{X: a.X + b.X, Y: a.Y + b.Y}
+// add adds two Points (coordinates).
+func add(p1, p2 Point) Point {
+	return Point{p1.X + p2.X, p1.Y + p2.Y}
 }
 
-// canMove checks if the robot can move to a new position
+// canMove checks if the robot can move to the target position (either empty or box).
 func canMove(warehouse *[][]rune, target Point) bool {
+	// Check if the target is within bounds and is either empty or a box
 	if target.Y < 0 || target.Y >= len(*warehouse) || target.X < 0 || target.X >= len((*warehouse)[0]) {
 		return false // Out of bounds
 	}
-	targetCell := (*warehouse)[target.Y][target.X]
-	return targetCell == Empty || targetCell == Box
+	return (*warehouse)[target.Y][target.X] == Empty || (*warehouse)[target.Y][target.X] == Box
 }
 
-// canMoveBox checks if a box can be pushed to the given position
-func canMoveBox(warehouse *[][]rune, target Point) bool {
-	if target.Y < 0 || target.Y >= len(*warehouse) || target.X < 0 || target.X >= len((*warehouse)[0]) {
+// canMoveSingleBox checks if the robot can move a single box and if there's space behind it.
+func canMoveSingleBox(warehouse *[][]rune, boxPosition Point, target Point) bool {
+	// Check if the position behind the box is empty
+	spaceBehindBox := add(boxPosition, target)
+	if spaceBehindBox.Y < 0 || spaceBehindBox.Y >= len(*warehouse) || spaceBehindBox.X < 0 || spaceBehindBox.X >= len((*warehouse)[0]) {
 		return false // Out of bounds
 	}
-	return (*warehouse)[target.Y][target.X] == Empty
+
+	// Ensure that the space behind the box is empty or contains the robot
+	if (*warehouse)[spaceBehindBox.Y][spaceBehindBox.X] == Empty || (*warehouse)[spaceBehindBox.Y][spaceBehindBox.X] == Robot {
+		return true
+	}
+
+	return false
+}
+
+// canMoveMultipleBoxes checks if the robot can move multiple consecutive boxes and if there is enough space behind all boxes.
+func canMoveMultipleBoxes(warehouse *[][]rune, firstBoxPosition Point, direction Point) bool {
+	// Check for a chain of boxes in the given direction
+	currentPos := firstBoxPosition
+	boxesToMove := []Point{currentPos}
+
+	// Collect all the consecutive boxes in the chain
+	for {
+		// Move to the next position in the direction
+		currentPos = add(currentPos, direction)
+		if currentPos.Y < 0 || currentPos.Y >= len(*warehouse) || currentPos.X < 0 || currentPos.X >= len((*warehouse)[0]) {
+			break
+		}
+		if (*warehouse)[currentPos.Y][currentPos.X] != Box {
+			break
+		}
+		boxesToMove = append(boxesToMove, currentPos)
+	}
+
+	// Check if there is enough space after the last box in the chain
+	lastBoxPosition := boxesToMove[len(boxesToMove)-1]
+	spaceAfterLastBox := add(lastBoxPosition, direction)
+
+	// Directly return the result of canMove check
+	return canMove(warehouse, spaceAfterLastBox)
 }
 
 // calculateGPSSum computes the total GPS sum of all boxes in the warehouse
@@ -119,16 +186,23 @@ func calculateGPSSum(warehouse [][]rune) int {
 	return total
 }
 
+// func printWarehouse(warehouse [][]rune) {
+// 	for _, row := range warehouse {
+// 		fmt.Println(string(row))
+// 	}
+// }
+
 // Solve the problem
 func Solve(lines []string) (int, int) {
-	// Step 2: Parse the input into the warehouse map, robot moves, and robot position
+	// Part1
 	warehouse, moveSequence, robotPosition := parseInput(lines)
 
-	// Step 3: Move the robot and simulate the pushes
-	moveRobot(&warehouse, robotPosition, moveSequence)
+	moveRobot(&warehouse, &robotPosition, moveSequence)
+
+	// fmt.Println("\nFinal state:")
+	// printWarehouse(warehouse)
 
 	// Step 4: Calculate and print the total GPS sum for all boxes
 	totalSum := calculateGPSSum(warehouse)
-	fmt.Println("Total GPS Sum:", totalSum)
 	return totalSum, 0
 }
