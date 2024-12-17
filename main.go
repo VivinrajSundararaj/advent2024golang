@@ -13,6 +13,7 @@ import (
 	"github.com/VivinrajSundararaj/advent2024golang/day11"
 	"github.com/VivinrajSundararaj/advent2024golang/day12"
 	"github.com/VivinrajSundararaj/advent2024golang/day13"
+	"github.com/VivinrajSundararaj/advent2024golang/day14"
 	"github.com/VivinrajSundararaj/advent2024golang/utils"
 )
 
@@ -41,6 +42,7 @@ func main() {
 		"11": day11.Solve,
 		"12": day12.Solve,
 		"13": day13.Solve,
+		"14": day14.Solve,
 	}
 
 	// Lookup the appropriate Solve function based on the day
