@@ -103,21 +103,20 @@ func CountQuadrants(grid [][]int, width, height int) int {
 	return q1 * q2 * q3 * q4
 }
 
-// AdvanceTime moves the robots for a given number of seconds
 func AdvanceTime(robots []Robot, seconds int) []Robot {
-	newRobots := make([]Robot, len(robots))
+	advanced := make([]Robot, len(robots))
 	for i, r := range robots {
-		newRobots[i] = Robot{
+		advanced[i] = Robot{
 			PosX:      r.PosX + r.VelocityX*seconds,
 			PosY:      r.PosY + r.VelocityY*seconds,
 			VelocityX: r.VelocityX,
 			VelocityY: r.VelocityY,
 		}
 	}
-	return newRobots
+	return advanced
 }
 
-// BoundingBox calculates the christmas tree dimensions for the given robots
+// BoundingBox computes the bounding box around the robots
 func BoundingBox(robots []Robot) (int, int, int, int) {
 	minX, minY := math.MaxInt, math.MaxInt
 	maxX, maxY := math.MinInt, math.MinInt
@@ -139,6 +138,11 @@ func BoundingBox(robots []Robot) (int, int, int, int) {
 	return minX, maxX, minY, maxY
 }
 
+// Area calculates the area of the bounding box
+func Area(minX, maxX, minY, maxY int) int {
+	return (maxX - minX + 1) * (maxY - minY + 1)
+}
+
 // Solve the problem
 func Solve(lines []string) (int, int) {
 
@@ -155,16 +159,15 @@ func Solve(lines []string) (int, int) {
 	minArea := math.MaxInt
 	bestTime := 0
 
-	for t := 0; t < 20000; t++ { // Arbitrarily chosen upper limit
+	for t := 0; t < 100000; t++ { // Larger upper limit
 		advancedRobots := AdvanceTime(robots, t)
 		minX, maxX, minY, maxY := BoundingBox(advancedRobots)
-		area := (maxX - minX + 1) * (maxY - minY + 1)
+		area := Area(minX, maxX, minY, maxY)
 
 		if area < minArea {
 			minArea = area
 			bestTime = t
 		}
 	}
-
 	return safetyFactor, bestTime
 }
